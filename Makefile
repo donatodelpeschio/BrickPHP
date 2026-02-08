@@ -13,22 +13,26 @@ help:
 	@echo "  make controller name=User    Crea un nuovo Controller"
 	@echo "  make model name=User         Crea un nuovo Model"
 
+PROJECT_NAME = brickphp
+APP_CONTAINER = $(PROJECT_NAME)_app
+
 install:
 	@chmod +x bin/setup.sh
 	@./bin/setup.sh
-	@# Ora che lo script ha creato il docker-compose.yml, possiamo usare Docker
+	@# Ricarichiamo la variabile PROJECT_NAME dopo lo script (opzionale ma utile)
 	@echo "📦 Installazione dipendenze..."
 	docker compose run --rm app composer install
-	@echo "⚙️ Configurazione ambiente..."
-	cp -n .env.example .env || true
+	@echo "🚀 Avvio dei container in background..."
+	docker compose up -d
 	@echo "📂 Creazione cartelle storage e permessi..."
-	docker exec -it brickphp_app mkdir -p storage/cache storage/logs storage/sessions
-	docker exec -it brickphp_app chown -R www-data:www-data storage
-	docker exec -it brickphp_app chmod -R 775 storage
-	@echo "🗄️ Esecuzione migrazioni iniziali..."
-	@make up # Avviamo i container per poter migrare
-	sleep 5 # Aspettiamo che MySQL sia pronto
-	docker exec -it brickphp_app php brick migrate
+	@# Usiamo $(PROJECT_NAME)_app per essere sicuri che il nome sia dinamico
+	docker exec -it $(PROJECT_NAME)_app mkdir -p storage/cache storage/logs storage/sessions
+	docker exec -it $(PROJECT_NAME)_app chown -R www-data:www-data storage
+	docker exec -it $(PROJECT_NAME)_app chmod -R 775 storage
+	@echo "🗄️ Esecuzione migrazioni..."
+	@sleep 5
+	docker exec -it $(PROJECT_NAME)_app php brick migrate
+	@echo "✨ BrickPHP pronto! Naviga su http://localhost:8080"
 
 up:
 	docker-compose up -d
