@@ -1,0 +1,98 @@
+#!/usr/bin/env php
+<?php
+
+require __DIR__ . '/vendor/autoload.php';
+
+$command = $argv[1] ?? 'help';
+$name = $argv[2] ?? null;
+
+switch ($command) {
+    case 'make:controller':
+        createFile('Controller', $name, 'app/Controllers/Web');
+        break;
+
+    case 'make:model':
+        createFile('Model', $name, 'app/Models');
+        break;
+
+    case 'migrate':
+        runMigrations();
+        break;
+
+    case 'help':
+    default:
+        echo "🧱 BrickPHP CLI Tool\n";
+        echo "Usage: php brick [command] [name]\n\n";
+        echo "Commands:\n";
+        echo "  make:controller {Name}  Crea un Controller in app/Controllers/Web\n";
+        echo "  make:model {Name}       Crea un Model in app/Models\n";
+        echo "  migrate                 Esegue i file .sql in database/migrations/\n";
+        break;
+}
+
+function createFile($type, $name, $subDir) {
+    if (!$name) die("❌ Errore: Specifica il nome del $type (es. User$type)\n");
+
+    $path = __DIR__ . "/{$subDir}/{$name}.php";
+    if (file_exists($path)) die("⚠️ Il $type {$name} esiste già!\n");
+
+    $namespace = str_replace('/', '\\', ucfirst($subDir));
+
+    // Template per i Model
+    if ($type === 'Model') {
+        $table = strtolower(str_replace('Model', '', $name)) . 's';
+        $template = "<?php\n\nnamespace {$namespace};\n\nclass {$name}\n{\n    protected static \$table = '{$table}';\n\n    public static function all()\n    {\n        return db()->table(self::\$table)->get();\n    }\n}\n";
+    }
+    // Template per i Controller
+    else {
+        $template = "<?php\n\nnamespace {$namespace};\n\nuse BrickPHP\Core\Http\Request;\nuse BrickPHP\Core\Http\Response;\n\nclass {$name}\n{\n    public function index(Request \$request): Response\n    {\n        return view('welcome', ['name' => 'BrickPHP']);\n    }\n}\n";
+    }
+
+    file_put_contents($path, $template);
+    echo "✅ $type creato correttamente: {$path}\n";
+}
+
+function runMigrations() {
+    echo "🚀 BrickPHP Migration Tool\n";
+    echo "--------------------------\n";
+
+    try {
+        $config = require __DIR__ . '/config/database.php';
+        $pdo = \BrickPHP\Database\Connection::make($config);
+
+        // Creiamo una tabella per tracciare le migrazioni già fatte (opzionale ma consigliato)
+        $pdo->exec("CREATE TABLE IF NOT EXISTS migrations (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            migration VARCHAR(255),
+            executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )");
+
+        $files = glob(__DIR__ . '/database/migrations/*.sql');
+        sort($files); // Assicura l'ordine numerico (001, 002, ecc.)
+
+        foreach ($files as $file) {
+            $filename = basename($file);
+
+            // Controlla se è già stata eseguita
+            $stmt = $pdo->prepare("SELECT id FROM migrations WHERE migration = ?");
+            $stmt->execute([$filename]);
+
+            if ($stmt->fetch()) {
+                echo "  ⏩ Salto: $filename (già eseguita)\n";
+                continue;
+            }
+
+            $sql = file_get_contents($file);
+            $pdo->exec($sql);
+
+            // Registra l'esecuzione
+            $stmt = $pdo->prepare("INSERT INTO migrations (migration) VALUES (?)");
+            $stmt->execute([$filename]);
+
+            echo "  ✅ Eseguito: $filename\n";
+        }
+        echo "--------------------------\n✨ Tutto in ordine!\n";
+    } catch (\Exception $e) {
+        die("❌ Errore critico durante la migrazione: " . $e->getMessage() . "\n");
+    }
+}

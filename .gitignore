@@ -1,0 +1,46 @@
+# --- BrickPHP Core ---
+.env
+.env.local
+.env.testing
+vendor/
+composer.lock
+
+# --- Storage & Logs ---
+# Escludiamo tutto il contenuto di storage, ma manteniamo le cartelle
+storage/cache/*
+storage/logs/*.log
+storage/sessions/*
+storage/framework/views/*
+# Eccezione: non eliminare i file .gitignore dentro storage (se presenti) per preservare le cartelle
+!storage/cache/.gitignore
+!storage/logs/.gitignore
+!storage/sessions/.gitignore
+
+# --- IDEs & Editors ---
+# JetBrains (PhpStorm, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+cmake-build-*/
+
+# VS Code
+.vscode/
+.history/
+*.code-workspace
+
+# Altri (Sublime, TextMate, etc.)
+*.sublime-project
+*.sublime-workspace
+.DS_Store
+Thumbs.db
+
+# --- Docker & OS ---
+.docker/
+docker-compose.override.yml
+.phpunit.result.cache
+
+# --- Frontend (se userai npm in futuro) ---
+node_modules/
+npm-debug.log
+public/css/*.map
+public/js/*.map
