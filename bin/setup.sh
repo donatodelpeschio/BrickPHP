@@ -20,7 +20,8 @@ echo -e "${BLUE}🧱 BrickPHP: Configurazione Iniziale del Progetto${NC}"
 echo "----------------------------------------------------"
 
 # 1. Richiesta dati all'utente
-read -p "Nome del progetto (es. tanklog): " PROJECT_NAME
+read -p "Nome del progetto (es. tuoprogetto): " RAW_PROJECT_NAME
+PROJECT_NAME=$(echo "$RAW_PROJECT_NAME" | tr '[:upper:]' '[:lower:]')
 read -p "Porta Web (default 8080): " APP_PORT
 APP_PORT=${APP_PORT:-8080}
 read -p "Database Name: " DB_NAME
