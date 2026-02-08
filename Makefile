@@ -19,21 +19,21 @@ APP_CONTAINER = $(PROJECT_NAME)_app
 install:
 	@chmod +x bin/setup.sh
 	@./bin/setup.sh
-	@# Ricarichiamo le variabili o forziamo l'uso del nome appena generato
-	@echo "📦 Installazione dipendenze..."
-	docker compose run --rm app composer install
-	@echo "🚀 Avvio stabile dei container..."
+	@# Forziamo il ricaricamento del nome se possibile, o usiamo una variabile d'ambiente
+	@echo "🚀 Avvio container..."
 	docker compose up -d
-	@echo "⏳ Attesa inizializzazione (5s)..."
-	@sleep 5
-	@echo "📂 Configurazione storage e permessi..."
-	@# Usiamo variabili dinamiche per i nomi dei container
-	docker exec -it $(PROJECT_NAME)_app mkdir -p storage/cache storage/logs storage/sessions
-	docker exec -it $(PROJECT_NAME)_app chown -R www-data:www-data storage
-	docker exec -it $(PROJECT_NAME)_app chmod -R 775 storage
-	@echo "🗄️ Esecuzione migrazioni..."
-	docker exec -it $(PROJECT_NAME)_app php brick migrate
-	@echo "✨ BrickPHP è pronto! Naviga su http://localhost:8080"
+	@echo "⏳ Attesa che i servizi siano pronti..."
+	@sleep 10
+	@echo "📦 Installazione dipendenze..."
+	@# Usiamo il comando dinamico basato sul nome che hai inserito nello script
+	docker exec -it $$(grep PROJECT_NAME Makefile | awk '{print $$3}')_app composer install
+	@echo "📂 Configurazione storage..."
+	docker exec -it $$(grep PROJECT_NAME Makefile | awk '{print $$3}')_app mkdir -p storage/cache storage/logs storage/sessions
+	docker exec -it $$(grep PROJECT_NAME Makefile | awk '{print $$3}')_app chown -R www-data:www-data storage
+	docker exec -it $$(grep PROJECT_NAME Makefile | awk '{print $$3}')_app chmod -R 775 storage
+	@echo "🗄️ Migrazioni..."
+	docker exec -it $$(grep PROJECT_NAME Makefile | awk '{print $$3}')_app php brick migrate
+	@echo "✨ BrickPHP pronto! Vai su http://localhost:8080"
 
 up:
 	docker-compose up -d
