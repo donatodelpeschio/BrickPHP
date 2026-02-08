@@ -14,8 +14,11 @@ help:
 	@echo "  make model name=User         Crea un nuovo Model"
 
 install:
+	@chmod +x bin/setup.sh
+	@./bin/setup.sh
+	@# Ora che lo script ha creato il docker-compose.yml, possiamo usare Docker
 	@echo "📦 Installazione dipendenze..."
-	docker-compose run --rm app composer install
+	docker compose run --rm app composer install
 	@echo "⚙️ Configurazione ambiente..."
 	cp -n .env.example .env || true
 	@echo "📂 Creazione cartelle storage e permessi..."
