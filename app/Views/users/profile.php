@@ -2,17 +2,20 @@
 <html lang="it">
 <head>
     <meta charset="UTF-8">
-    <title><?php echo $title; ?></title>
+    <title><?= htmlspecialchars($title) ?></title>
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
 <h1>Profilo Utente</h1>
+
 <div class="card">
-    <p><strong>Nome:</strong> <?php echo $user->name; ?></p>
-    <p><strong>Email:</strong> <?php echo $user->email; ?></p>
+    <p><strong>Nome:</strong> <?= htmlspecialchars($user->name) ?></p>
+    <p><strong>Email:</strong> <?= htmlspecialchars($user->email) ?></p>
 </div>
 
 <hr>
-<small>Generato da BrickPHP</small>
+<footer>
+    <small>Generato da **BrickPHP**</small>
+</footer>
 </body>
 </html>

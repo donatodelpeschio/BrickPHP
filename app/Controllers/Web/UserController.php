@@ -15,25 +15,23 @@ class UserController
         $user = cache()->get($cacheKey);
 
         if (!$user) {
-            // 2. Se non c'è, usa il Query Builder
-            $user = db()->table('users')
-                ->where('id', '=', $id)
-                ->get();
+            // 2. Usiamo il metodo find() che abbiamo aggiunto al QueryBuilder
+            // È più pulito e restituisce già un singolo oggetto invece di un array
+            $user = db()->table('users')->find($id);
 
-            // Se l'utente non esiste, lanciamo un errore (verrà gestito dal Dispatcher/ErrorHandler)
+            // Se l'utente non esiste
             if (!$user) {
                 return new Response("Utente non trovato", 404);
             }
 
-            $user = $user[0]; // Prendiamo il primo risultato
-
-            // 3. Salva in Cache per 10 minuti (600 secondi)
+            // 3. Salva in Cache per 10 minuti
             cache()->set($cacheKey, $user, 600);
         }
 
         // 4. Ritorna la View con i dati
+        // Nota: l'helper view() ora restituisce già un oggetto Response grazie al nostro fix negli helper
         return view('users.profile', [
-            'title' => 'Profilo di ' . $user->name,
+            'title' => 'Profilo di ' . ($user->name ?? 'Utente'),
             'user'  => $user
         ]);
     }

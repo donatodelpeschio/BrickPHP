@@ -1,6 +1,6 @@
 FROM php:8.2-fpm
 
-# Install extensions
+# Installazione dipendenze di sistema e librerie necessarie
 RUN apt-get update && apt-get install -y \
     git \
     unzip \
@@ -11,23 +11,27 @@ RUN apt-get update && apt-get install -y \
     libssl-dev \
     && docker-php-ext-install pdo pdo_mysql zip
 
-# Install Redis extension
+# Installazione estensione Redis (fondamentale per RedisCache.php)
 RUN pecl install redis \
     && docker-php-ext-enable redis
 
-# Composer
+# Installazione Composer (copiato dall'immagine ufficiale)
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
+# Definizione directory di lavoro (che corrisponderà al nostro BRICK_PATH)
 WORKDIR /var/www/html
 
-# Permissions
-RUN chown -R www-data:www-data /var/www/html
+# Creazione della struttura storage prima di copiare i file
+# Questo assicura che le cartelle esistano e abbiano i permessi corretti fin dal boot
+RUN mkdir -p storage/cache storage/logs storage/sessions
 
-# Crea le cartelle necessarie e imposta i permessi
-RUN mkdir -p storage/cache storage/logs storage/sessions \
-    && chown -R www-data:www-data /var/www/html/storage \
+# Ottimizzazione permessi:
+# L'utente www-data deve poter scrivere in storage.
+# Aggiungiamo anche l'utente root (usato spesso dalla CLI Docker) al gruppo www-data
+RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 775 /var/www/html/storage
 
+# Esposizione per PHP-FPM
+EXPOSE 9000
 
 CMD ["php-fpm"]

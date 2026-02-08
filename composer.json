@@ -5,15 +5,27 @@
   "license": "MIT",
   "require": {
     "php": "^8.2",
-    "brickphp/core": "^1.0"
+    "brickphp/core": "dev-main",
+    "vlucas/phpdotenv": "^5.5"
   },
   "autoload": {
     "psr-4": {
       "App\\": "app/"
+    },
+    "files": [
+      "vendor/brickphp/core/src/Helpers.php"
+    ]
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true,
+    "allow-plugins": {
+      "php-http/discovery": true
     }
   },
   "scripts": {
     "post-create-project-cmd": [
+      "@php -r \"copy('.env.example', '.env');\"",
       "make install"
     ]
   }

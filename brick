@@ -1,11 +1,14 @@
 #!/usr/bin/env php
 <?php
 
-require __DIR__ . '/vendor/autoload.php';
+// 1. Definiamo la root del progetto
+define('BRICK_PATH', __DIR__);
 
-// Carica le variabili d'ambiente anche per la CLI
-if (file_exists(__DIR__ . '/.env')) {
-    $dotenv = Dotenv\Dotenv::createImmutable(__DIR__);
+require BRICK_PATH . '/vendor/autoload.php';
+
+// 2. Carica le variabili d'ambiente (.env)
+if (file_exists(BRICK_PATH . '/.env')) {
+    $dotenv = Dotenv\Dotenv::createImmutable(BRICK_PATH);
     $dotenv->load();
 }
 
@@ -27,35 +30,43 @@ switch ($command) {
 
     case 'help':
     default:
-        echo "🧱 BrickPHP CLI Tool\n";
+        echo "\n🧱 BrickPHP CLI Tool\n";
         echo "Usage: php brick [command] [name]\n\n";
         echo "Commands:\n";
         echo "  make:controller {Name}  Crea un Controller in app/Controllers/Web\n";
         echo "  make:model {Name}       Crea un Model in app/Models\n";
         echo "  migrate                 Esegue i file .sql in database/migrations/\n";
+        echo "  cache:clear             Svuota la cache del filesystem\n\n";
         break;
 }
 
 function createFile($type, $name, $subDir) {
     if (!$name) die("❌ Errore: Specifica il nome del $type (es. User$type)\n");
 
-    $path = __DIR__ . "/{$subDir}/{$name}.php";
-    if (file_exists($path)) die("⚠️ Il $type {$name} esiste già!\n");
+    // Assicuriamoci che il nome inizi con la maiuscola
+    $name = ucfirst($name);
+    $fullPathDir = BRICK_PATH . "/{$subDir}";
+    $filePath = "{$fullPathDir}/{$name}.php";
 
-    $namespace = str_replace('/', '\\', ucfirst($subDir));
+    // Crea la cartella se non esiste
+    if (!is_dir($fullPathDir)) {
+        mkdir($fullPathDir, 0755, true);
+    }
 
-    // Template per i Model
+    if (file_exists($filePath)) die("⚠️ Il $type {$name} esiste già!\n");
+
+    // Genera il Namespace in base alla cartella
+    $namespace = str_replace(['app/', '/'], ['App\\', '\\'], $subDir);
+
     if ($type === 'Model') {
-        $table = strtolower(str_replace('Model', '', $name)) . 's';
+        $table = strtolower($name) . 's';
         $template = "<?php\n\nnamespace {$namespace};\n\nclass {$name}\n{\n    protected static \$table = '{$table}';\n\n    public static function all()\n    {\n        return db()->table(self::\$table)->get();\n    }\n}\n";
-    }
-    // Template per i Controller
-    else {
-        $template = "<?php\n\nnamespace {$namespace};\n\nuse BrickPHP\Core\Http\Request;\nuse BrickPHP\Core\Http\Response;\n\nclass {$name}\n{\n    public function index(Request \$request): Response\n    {\n        return view('welcome', ['name' => 'BrickPHP']);\n    }\n}\n";
+    } else {
+        $template = "<?php\n\nnamespace {$namespace};\n\nuse BrickPHP\Core\Http\Request;\nuse BrickPHP\Core\Http\Response;\n\nclass {$name}\n{\n    public function index(Request \$request): Response\n    {\n        // return view('welcome');\n        return new Response('Nuovo Controller {$name} pronto!');\n    }\n}\n";
     }
 
-    file_put_contents($path, $template);
-    echo "✅ $type creato correttamente: {$path}\n";
+    file_put_contents($filePath, $template);
+    echo "✅ $type creato correttamente: {$filePath}\n";
 }
 
 function runMigrations() {
@@ -63,23 +74,25 @@ function runMigrations() {
     echo "--------------------------\n";
 
     try {
-        $config = require __DIR__ . '/config/database.php';
+        $config = require BRICK_PATH . '/config/database.php';
         $pdo = \BrickPHP\Database\Connection::make($config);
 
-        // Creiamo una tabella per tracciare le migrazioni già fatte (opzionale ma consigliato)
         $pdo->exec("CREATE TABLE IF NOT EXISTS migrations (
             id INT AUTO_INCREMENT PRIMARY KEY,
             migration VARCHAR(255),
             executed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )");
 
-        $files = glob(__DIR__ . '/database/migrations/*.sql');
-        sort($files); // Assicura l'ordine numerico (001, 002, ecc.)
+        $files = glob(BRICK_PATH . '/database/migrations/*.sql');
+        if (empty($files)) {
+            echo "ℹ️ Nessuna migrazione trovata in database/migrations/\n";
+            return;
+        }
+
+        sort($files);
 
         foreach ($files as $file) {
             $filename = basename($file);
-
-            // Controlla se è già stata eseguita
             $stmt = $pdo->prepare("SELECT id FROM migrations WHERE migration = ?");
             $stmt->execute([$filename]);
 
@@ -91,14 +104,13 @@ function runMigrations() {
             $sql = file_get_contents($file);
             $pdo->exec($sql);
 
-            // Registra l'esecuzione
             $stmt = $pdo->prepare("INSERT INTO migrations (migration) VALUES (?)");
             $stmt->execute([$filename]);
 
             echo "  ✅ Eseguito: $filename\n";
         }
-        echo "--------------------------\n✨ Tutto in ordine!\n";
+        echo "--------------------------\n✨ Migrazioni completate!\n";
     } catch (\Exception $e) {
-        die("❌ Errore critico durante la migrazione: " . $e->getMessage() . "\n");
+        die("❌ Errore durante la migrazione: " . $e->getMessage() . "\n");
     }
 }
