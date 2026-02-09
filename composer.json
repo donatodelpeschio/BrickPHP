@@ -11,10 +11,7 @@
   "autoload": {
     "psr-4": {
       "App\\": "app/"
-    },
-    "files": [
-      "vendor/brickphp/core/src/Helpers.php"
-    ]
+    }
   },
   "config": {
     "optimize-autoloader": true,
