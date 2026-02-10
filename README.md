@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/images/mockup.png" alt="BrickPHP Mockup" width="800">
+</p>
+
 # 🧱 BrickPHP Skeleton
 
 [![Latest Stable Version](https://img.shields.io/packagist/v/brickphp/brickphp.svg?style=flat-square)](https://packagist.org/packages/brickphp/brickphp)
@@ -11,7 +15,7 @@ Lo Skeleton è il punto di partenza ufficiale per costruire le tue applicazioni,
 
 
 
-[Image of MVC architectural pattern diagram]
+![Schema MVC](docs/images/mvc.png)
 
 
 ---
